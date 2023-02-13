@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { Searchbar } from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import { getGallery } from '../services/galleryService';
@@ -7,97 +7,84 @@ import { ColorRing } from 'react-loader-spinner';
 import Modal from './Modal/Modal';
 import { ModalDetails } from './Modal/ModalDetails';
 
-export default class Gallery extends Component {
-  state = {
-    gallery: [],
-    isLoading: false,
-    error: null,
-    page: 1,
-    q: '',
-    totalPages: 1,
-    per_page: 12,
-    showModal: false,
-    modalDetails: null,
-  };
+const Gallery = () => {
+  const [gallery, setGallery] = useState([]);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [q, setQ] = useState('');
+  const [per_page, setPer_page] = useState(12);
+  const [totalPages, setTotalPages] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [modalDetails, setModalDetails] = useState(null);
 
-  // componentDidMount() {
-  //   this.fetchGallery();
-  // }
-  componentDidUpdate(_, prevState) {
-    if (prevState.page !== this.state.page || prevState.q !== this.state.q) {
-      this.fetchGallery();
-    }
-    return;
-  }
+  useEffect(() => {
+    fetchGallery();
+  }, [q]);
 
-  fetchGallery = async () => {
-    this.setState({ isLoading: true });
+  const fetchGallery = async () => {
+    setIsLoading(true);
     try {
       const res = await getGallery({
         params: {
-          page: this.state.page,
-          q: this.state.q,
+          page: page,
+          q: q,
         },
       });
-      this.setState(prevState => ({
-        gallery: [...prevState.gallery, ...res.hits],
-        totalPages: Math.ceil(res.totalHits / 12),
-      }));
+      setGallery(prev => {
+        return [...prev, ...res.hits];
+      });
+      setTotalPages(Math.ceil(res.totalHits / 12));
     } catch (error) {
-      this.setState({ error: error.message });
+      setError(error.message);
     } finally {
-      this.setState({ isLoading: false });
+      setIsLoading(false);
     }
   };
 
-  handleChangeQuery = q => {
-    this.setState({ q, page: 1, gallery: [] });
+  const handleChangeQuery = q => {
+    setQ(q);
+    setPage(1);
+    setGallery([]);
   };
 
-  handleLoadMore = () => {
-    this.setState(prev => ({ page: prev.page + 1 }));
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1);
   };
 
-  showImage = ({ tags, largeImageURL }) => {
-    this.setState({
-      modalDetails: { tags, largeImageURL },
-      showModal: true,
-    });
+  const showImage = ({ tags, largeImageURL }) => {
+    setModalDetails({ tags, largeImageURL });
+    setShowModal(true);
   };
-  closeImage = () => {
-    this.setState({
-      modalDetails: null,
-      showModal: false,
-    });
+  const closeImage = () => {
+    setModalDetails(null);
+    setShowModal(false);
   };
 
-  render() {
-    const { gallery, isLoading, showModal, modalDetails } = this.state;
-    const page = this.state.totalPages === this.state.page;
-    return (
-      <>
-        <Searchbar onSubmit={this.handleChangeQuery} />
-        <div>
-          <ImageGallery gallery={gallery} showImage={this.showImage} />
-        </div>
-        {isLoading && <ColorRing />}
-        {!page
-          ? Boolean(gallery.length) && (
-              <button
-                onClick={this.handleLoadMore}
-                type="button"
-                className={css.button}
-              >
-                Load More
-              </button>
-            )
-          : null}
-        {showModal && (
-          <Modal closeImage={this.closeImage}>
-            <ModalDetails modalDetails={modalDetails} />
-          </Modal>
-        )}
-      </>
-    );
-  }
-}
+  const differencePage = totalPages === page;
+  return (
+    <>
+      <Searchbar onSubmit={handleChangeQuery} />
+      <ImageGallery gallery={gallery} showImage={showImage} />
+      {isLoading && <ColorRing />}
+      {!differencePage
+        ? Boolean(gallery.length) && (
+            <button
+              onClick={handleLoadMore}
+              type="button"
+              className={css.button}
+            >
+              Load More
+            </button>
+          )
+        : null}
+      {showModal && (
+        <Modal closeImage={closeImage}>
+          <ModalDetails modalDetails={modalDetails} />
+        </Modal>
+      )}
+    </>
+  );
+};
+
+export default Gallery;
