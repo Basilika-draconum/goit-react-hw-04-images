@@ -13,14 +13,13 @@ const Gallery = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [q, setQ] = useState('');
-  const [per_page, setPer_page] = useState(12);
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [modalDetails, setModalDetails] = useState(null);
 
   useEffect(() => {
     fetchGallery();
-  }, [q]);
+  }, []);
 
   const fetchGallery = async () => {
     setIsLoading(true);
