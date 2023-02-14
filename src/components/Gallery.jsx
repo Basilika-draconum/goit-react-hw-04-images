@@ -9,7 +9,6 @@ import { ModalDetails } from './Modal/ModalDetails';
 
 const Gallery = () => {
   const [gallery, setGallery] = useState([]);
-  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [q, setQ] = useState('');
@@ -18,28 +17,28 @@ const Gallery = () => {
   const [modalDetails, setModalDetails] = useState(null);
 
   useEffect(() => {
-    fetchGallery();
-  }, []);
+    const fetchGallery = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getGallery({
+          params: {
+            page: page,
+            q: q,
+          },
+        });
+        setGallery(prev => {
+          return [...prev, ...res.hits];
+        });
+        setTotalPages(Math.ceil(res.totalHits / 12));
+      } catch (error) {
+        console.log(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const fetchGallery = async () => {
-    setIsLoading(true);
-    try {
-      const res = await getGallery({
-        params: {
-          page: page,
-          q: q,
-        },
-      });
-      setGallery(prev => {
-        return [...prev, ...res.hits];
-      });
-      setTotalPages(Math.ceil(res.totalHits / 12));
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    if (q) fetchGallery();
+  }, [q, page]);
 
   const handleChangeQuery = q => {
     setQ(q);
